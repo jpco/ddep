@@ -3,11 +3,8 @@
 # DDEP: just another dotfiles deployment script.
 # Supports syncing files in subdirectories (e.g., I want my .vim/plugins,
 # but not .vim/backups).
-#
-# Warning: Does not (yet) support syncing a directory which already has
-# a file or subdirectory synced. Don't do that.
 
-[[ -z $DF_DIR ]] && DF_DIR=~/dotfiles/
+[[ -z $DF_DIR ]] && DF_DIR="$HOME/dotfiles/"
 
 usage() {
     echo "Usage: ddep [command] [file]"
