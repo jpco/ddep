@@ -9,13 +9,13 @@
 usage() {
     echo "Usage: ddep [command] [file]"
     echo "Commands:"
-    echo "\tinstall: installs (symlinks) ddep to wherever 'env' is located"
-    echo "\tuninstall: unlinks ddep from wherever 'env' is located"
-    echo "\tdeploy: symlinks dotfiles to home"
-    echo "\tadd [file]: adds file to dotfiles"
-    echo "\trm [file]: removes file from dotfiles"
-    echo "\tpull: pulls dotfiles repository from github"
-    echo "\tpush: commits & pushes dotfiles repository to github"
+    echo -e "\tinstall: installs (symlinks) ddep to wherever 'env' is located"
+    echo -e "\tuninstall: unlinks ddep from wherever 'env' is located"
+    echo -e "\tdeploy: symlinks dotfiles to home"
+    echo -e "\tadd [file]: adds file to dotfiles"
+    echo -e "\trm [file]: removes file from dotfiles"
+    echo -e "\tpull: pulls dotfiles repository from github"
+    echo -e "\tpush: commits & pushes dotfiles repository to github"
 }
 
 install() {
