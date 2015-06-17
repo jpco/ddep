@@ -28,46 +28,56 @@ uninstall() {
     unlink "$BIN_DIR/ddep"
 }
 
+deploy_f() {
+    dest=$1
+    if [[ -z `grep $dest $DF_DIR/.dfreg` ]]; then
+        echo "ddep: File not found in dotfiles."
+        exit 1
+    fi
+
+    src="$DF_DIR/home/${dest:2+${#HOME}}"
+    if [[ -e $dest ]]; then
+        if [[ ! -e $DF_DIR/stash ]]; then
+            echo "ddep: Creating stash"
+            mkdir "$DF_DIR/stash"
+        fi
+        if [[ -L $dest ]]; then
+            echo -n "Unlinking $dest "
+            echo "(points to `realpath $dest`)"
+            unlink "$dest"
+        else
+            mv -f "$dest" "$DF_DIR/stash/$dest"
+            stashed=yes
+        fi
+        if [[ $? -ne 0 ]]; then
+            echo "ddep: Could not clear destination."
+            echo "ddep: Problematic file: $dest"
+            exit 1
+        fi
+    fi
+    
+    # dirs between ~ and the desired dotfile
+    tdirs=`echo ${dest%/*} | tr "/" "\n"`
+    cdest=""
+    for tdir in $tdirs; do
+        if [[ ! -d "$cdest/$tdir" ]]; then
+            if [[ -e "$cdest/$tdir" ]]; then
+                echo "ddep: Conflicting file $cdest/$tdir in \$HOME."
+                exit 1
+            fi
+
+            mkdir "$cdest/$tdir"
+        fi
+
+        cdest="$cdest/$tdir"
+    done
+    ln -s "$src" "$dest"
+}
+
 deploy() {
     stashed=no
     for dest in `cat $DF_DIR/.dfreg`; do
-        src="$DF_DIR/home/${dest:2+${#HOME}}"
-        if [[ -e $dest ]]; then
-            if [[ ! -e $DF_DIR/stash ]]; then
-                echo "ddep: Creating stash"
-                mkdir "$DF_DIR/stash"
-            fi
-            if [[ -L $dest ]]; then
-                echo -n "Unlinking $dest "
-                echo "(points to `realpath $dest`)"
-                unlink "$dest"
-            else
-                mv -f "$dest" "$DF_DIR/stash/$dest"
-                stashed=yes
-            fi
-            if [[ $? -ne 0 ]]; then
-                echo "ddep: Could not clear destination."
-                echo "ddep: Problematic file: $dest"
-                exit 1
-            fi
-        fi
-        
-        # dirs between ~ and the desired dotfile
-        tdirs=`echo ${dest%/*} | tr "/" "\n"`
-        cdest=""
-        for tdir in $tdirs; do
-            if [[ ! -d "$cdest/$tdir" ]]; then
-                if [[ -e "$cdest/$tdir" ]]; then
-                    echo "ddep: Conflicting file $cdest/$tdir in \$HOME."
-                    exit 1
-                fi
-
-                mkdir "$cdest/$tdir"
-            fi
-
-            cdest="$cdest/$tdir"
-        done
-        ln -s "$src" "$dest"
+        deploy_f $dest
     done
 
     if [[ $stashed = yes ]]; then
@@ -112,6 +122,10 @@ add() {
 
     # dirs between ~ and the desired dotfile
     tdirs=`echo ${nhname%/*} | tr "/" "\n"`
+    if [[ "$tdirs" = "$nhname" && ! -d "$HOME/.$tdirs" ]]; then
+        tdirs=
+    fi
+
     dest="$DF_DIR/home"
     for tdir in $tdirs; do
         if [[ $tdir = ${hname#/} ]]; then
@@ -177,7 +191,11 @@ case $1 in
         uninstall
         ;;
     deploy)
-        deploy
+        if [[ $# -eq 1 ]]; then
+            deploy
+        else
+            deploy_f $2
+        fi
         ;;
     add)
         if [[ $# -eq 1 ]]; then
