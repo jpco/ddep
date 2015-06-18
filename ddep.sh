@@ -5,6 +5,7 @@
 # but not .vim/backups).
 
 [[ -z $DF_DIR ]] && DF_DIR="$HOME/dotfiles/"
+[[ -z $DF_BRANCH ]] && DF_BRANCH="master"
 
 usage() {
     echo "Usage: ddep [command] [file]"
@@ -179,7 +180,7 @@ pull() {
 push() {
     cd "$DF_DIR"
     git add home && git commit -m "ddep commit `date`" \
-    && git push origin master
+    && git push origin $DF_BRANCH
     cd -
 }
 
