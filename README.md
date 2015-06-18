@@ -43,3 +43,4 @@ Commands:
  - Deployment file-by-file (if we have two files synced in a subdir, deploy that subdir to sync all files in the subdir!)
  - Support for people who want to keep their dotfiles not on github?
  - Support for alternatives of files...?
+ - Support for different home directories (specifically in .dfreg)
