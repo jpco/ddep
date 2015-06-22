@@ -7,6 +7,8 @@
 [[ -z $DF_DIR ]] && DF_DIR="$HOME/dotfiles/"
 [[ -z $DF_BRANCH ]] && DF_BRANCH="master"
 
+DEP_ACTION="ln -s"
+
 usage() {
     echo "Usage: ddep [command] [file]"
     echo "Commands:"
@@ -30,9 +32,9 @@ uninstall() {
 }
 
 deploy_f() {
-    dest=$1
-    if [[ -z `grep $dest $DF_DIR/.dfreg` ]]; then
-        echo "ddep: File not found in dotfiles."
+    dest=`realpath -s $2`
+    if [[ -z `grep ${dest:${#HOME}+1} $DF_DIR/.dfreg` ]]; then
+        echo "ddep: File $dest not found in dotfiles."
         exit 1
     fi
 
@@ -43,11 +45,27 @@ deploy_f() {
             mkdir "$DF_DIR/stash"
         fi
         if [[ -L $dest ]]; then
-            echo -n "Unlinking $dest "
+            echo -n "ddep: Unlinking $dest "
             echo "(points to `realpath $dest`)"
             unlink "$dest"
         else
-            mv -f "$dest" "$DF_DIR/stash/$dest"
+            stashdest="$DF_DIR/stash/${dest:2+${#HOME}}"
+            sdirs=`echo ${stashdest%/*} | tr "/" "\n"`
+            cdest=""
+            for sdir in $sdirs; do
+                if [[ ! -d "$cdest/$sdir" ]]; then
+                    if [[ -e "$cdest/$sdir" ]]; then
+                        echo "ddep: File conflict in the stash. Smashing old file (Sorry!)"
+                        rm -rf "$cdest/$sdir"
+                    fi
+
+                    mkdir "$cdest/$sdir"
+                fi
+
+                cdest="$cdest/$sdir"
+            done
+
+            mv -f "$dest" "$stashdest"
             stashed=yes
         fi
         if [[ $? -ne 0 ]]; then
@@ -72,18 +90,23 @@ deploy_f() {
 
         cdest="$cdest/$tdir"
     done
-    ln -s "$src" "$dest"
+    $DEP_ACTION "$src" "$dest"
+
+    if [[ $stashed = yes && $1 = '-y' ]]; then
+        echo "ddep: Files stashed during deployment."
+        echo "ddep: Review them in ${DF_DIR}stash."
+    fi
 }
 
 deploy() {
     stashed=no
     for dest in `cat $DF_DIR/.dfreg`; do
-        deploy_f $dest
+        deploy_f -n $dest
     done
 
     if [[ $stashed = yes ]]; then
         echo "ddep: Files stashed during deployment."
-        echo "ddep: Review them in $DF_DIR/stash."
+        echo "ddep: Review them in ${DF_DIR}stash."
     fi
 }
 
@@ -146,7 +169,8 @@ add() {
 
     mv "$path" "$dest/$name" && \
     ln -s "$dest/$name" "$path"
-    echo "$path" >> $DF_DIR/.dfreg
+    echo "${path:${#HOME}+1}"
+    echo "${path:${#HOME}+1}" >> $DF_DIR/.dfreg
 }
 
 remove() {
@@ -195,7 +219,15 @@ case $1 in
         if [[ $# -eq 1 ]]; then
             deploy
         else
-            deploy_f $2
+            deploy_f -y $2
+        fi
+        ;;
+    cp-deploy)
+        DEP_ACTION=cp
+        if [[ $# -eq 1 ]]; then
+            deploy
+        else
+            deploy_f -y $2
         fi
         ;;
     add)
