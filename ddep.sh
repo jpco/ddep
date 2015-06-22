@@ -175,9 +175,10 @@ add() {
 
 remove() {
     path=`realpath -se $1 2> /dev/null`
+    spath=${path:${#HOME}+1}
     df="$DF_DIR/home/${path:2+${#HOME}}"
 
-    if [[ ! -z `grep "$path" $DF_DIR/.dfreg` ]]; then
+    if [[ ! -z `grep "$spath" $DF_DIR/.dfreg` ]]; then
         unlink "$path" && mv "$df" "$path"
         cdfdir=${df%/*}
         while [[ $cdfdir != $DF_DIR/home ]]; do
@@ -188,7 +189,7 @@ remove() {
                 break
             fi
         done
-        grep -v "$path" "$DF_DIR/.dfreg" > "$DF_DIR/.ndfreg"
+        grep -v "$spath" "$DF_DIR/.dfreg" > "$DF_DIR/.ndfreg"
         mv "$DF_DIR/.ndfreg" "$DF_DIR/.dfreg"
     else
         echo "ddep: Could not find file in dotfiles dir."
