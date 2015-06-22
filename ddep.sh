@@ -169,7 +169,6 @@ add() {
 
     mv "$path" "$dest/$name" && \
     ln -s "$dest/$name" "$path"
-    echo "${path:${#HOME}+1}"
     echo "${path:${#HOME}+1}" >> $DF_DIR/.dfreg
 }
 
